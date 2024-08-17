@@ -5,24 +5,90 @@ author: Emmanuel Ajike
 date: August 17, 2024
 ---
 
-# Documentation in Progress
+# Primitive Data types
 
-## Overview
+Here we introduce you to some primitive data types available in Soroban.
 
-Thank you for your interest in our project! We are currently working on the documentation to ensure that it is comprehensive and easy to follow. This section will provide all the necessary steps and information for integrating our solution once it is complete.
+- u32
+- i32
+- u64
+- i64
+- u128
+- i128
+- bool
+- String
+- Vec
+- Symbol `// Valid characters are a-zA-Z0-9\_ and maximum length is 32 characters.`
+- Address
+- Map
+- Bytes
 
-## What's Coming
+```rust copy
+#![no_std]
+use soroban_sdk::{Env, contractimpl,contract, String, Bytes, Symbol, Vec, vec, symbol_short};
 
-- Detailed installation instructions.
-- Step-by-step integration guide.
-- Configuration and usage examples.
-- Known issues and troubleshooting tips.
-- Additional resources and support information.
+#[contract]
+pub struct PrimitivesContract;
 
-## Stay Tuned
+#[contractimpl]
+impl PrimitivesContract {
 
-We are committed to delivering high-quality documentation that will make your integration process as smooth as possible. Please check back soon for updates!
+    // Boolean
+    pub fn get_boolean(env: Env) -> bool {
+        true
+    }
 
-In the meantime, if you have any questions or need assistance, feel free to reach out to our [support team](#).
+    // Unsigned integer (u32 is Soroban-specific, as Soroban uses u32 internally for some operations)
+    pub fn get_u32(env: Env) -> u32 {
+        42
+    }
 
-Thank you for your patience and understanding! 🚀
+    // Signed integer (i32 is also specific to Soroban)
+    pub fn get_i32(env: Env) -> i32 {
+        -42
+    }
+
+
+    // Bytes (Soroban-specific data type for handling binary data)
+    pub fn get_bytes(env: Env) -> Bytes {
+        Bytes::from_slice(&env, &[0x01, 0x02, 0x03, 0x04])
+    }
+
+    // Symbol (Soroban-specific type for representing string-like data)
+    pub fn get_symbol(env: Env) -> Symbol {
+        Symbol::new(&env, "SORB")
+    }
+
+    // Vector (Soroban-specific data type, similar to arrays)
+    pub fn get_vector(env: Env) -> Vec<u32> {
+        Vec::from_array(&env, [1u32, 2u32, 3u32, 4u32])
+    }
+
+    // Vector (Soroban-specific data type, similar to arrays)
+    pub fn get_vector_macro(env: Env) -> Vec<Symbol> {
+        // limited capacity max 9 chars
+        vec![&env, symbol_short!("hellooooo")]
+    }
+
+    // Default values demonstration
+    pub fn get_default_bool(env: Env) -> bool {
+        // Default for boolean is false
+        false
+    }
+
+    pub fn get_default_u32(env: Env) -> u32 {
+        // Default for u32 is 0
+        0
+    }
+
+    pub fn get_default_i32(env: Env) -> i32 {
+        // Default for i32 is 0
+        0
+    }
+}
+
+```
+
+### Try on Okashi
+
+- [Primitive Datatypes](https://okashi.dev/playground/aazbdfistwmvbasoxbhnakkbqlaa)

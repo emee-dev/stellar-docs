@@ -5,24 +5,54 @@ author: Emmanuel Ajike
 date: August 17, 2024
 ---
 
-# Documentation in Progress
+# Usage of the Persistent Storage
 
-## Overview
+Persistent storage is particularly useful for storing data that is unique to individual
+users but needs to remain accessible across multiple interactions with the contract.
+This type of storage is ideal for data that is not shared globally among all users,
+such as user-specific balances or preferences, and is designed to be durable and not temporary.
 
-Thank you for your interest in our project! We are currently working on the documentation to ensure that it is comprehensive and easy to follow. This section will provide all the necessary steps and information for integrating our solution once it is complete.
+In the example below, persistent storage is used to store and retrieve a
+user's "favorite number," which is generated randomly and stored for future reference.
 
-## What's Coming
+```rust copy
 
-- Detailed installation instructions.
-- Step-by-step integration guide.
-- Configuration and usage examples.
-- Known issues and troubleshooting tips.
-- Additional resources and support information.
+#![no_std]
+use soroban_sdk::{contract, contractimpl, contracttype, Address, Env};
 
-## Stay Tuned
+#[contracttype]
+pub enum DataKey {
+    UserFavorite(Address),
+}
 
-We are committed to delivering high-quality documentation that will make your integration process as smooth as possible. Please check back soon for updates!
+#[contract]
+pub struct UserFavoriteContract;
 
-In the meantime, if you have any questions or need assistance, feel free to reach out to our [support team](#).
+#[contractimpl]
+impl UserFavoriteContract {
+    // Generates a random number for the user, stores it as their favorite, and returns it
+    pub fn set_random_favorite(env: Env, user: Address) -> u64 {
+        let key = DataKey::UserFavorite(user);
+        let favorite_number: u64 = env.prng().gen();
+        env.storage().persistent().set(&key, &favorite_number);
+        favorite_number
+    }
 
-Thank you for your patience and understanding! 🚀
+    // Retrieves and returns the user's stored favorite number, or 0 if not set
+    pub fn get_favorite(env: Env, user: Address) -> u64 {
+        let key = DataKey::UserFavorite(user);
+        if let Some(favorite_number) = env.storage().persistent().get(&key) {
+            favorite_number
+        } else {
+            0
+        }
+    }
+}
+
+```
+
+### Try on Okashi
+
+{/* TODO */}
+
+- [Persistent Storage]()

@@ -5,24 +5,56 @@ author: Emmanuel Ajike
 date: August 17, 2024
 ---
 
-# Documentation in Progress
+# First App
 
-## Overview
+The following is a simple `increment` and `decrement` smart contract.
 
-Thank you for your interest in our project! We are currently working on the documentation to ensure that it is comprehensive and easy to follow. This section will provide all the necessary steps and information for integrating our solution once it is complete.
+```rust copy
 
-## What's Coming
+#![no_std]
+use soroban_sdk::{contract, contractimpl, Env, contracttype, String, log};
 
-- Detailed installation instructions.
-- Step-by-step integration guide.
-- Configuration and usage examples.
-- Known issues and troubleshooting tips.
-- Additional resources and support information.
+#[derive(Clone)]
+#[contracttype]
+pub enum DataKey {
+    Admin,
+}
 
-## Stay Tuned
+#[contract]
+pub struct Contract;
 
-We are committed to delivering high-quality documentation that will make your integration process as smooth as possible. Please check back soon for updates!
+#[contractimpl]
+impl Contract {
 
-In the meantime, if you have any questions or need assistance, feel free to reach out to our [support team](#).
+    pub fn increment(env: Env) {
+        let key = DataKey::Admin;
+        let value = env.storage().instance().get(&key).unwrap_or(0u128);
 
-Thank you for your patience and understanding! 🚀
+        let new_value = value + 1;
+
+        env.storage().instance().set(&key, &new_value);
+    }
+
+    pub fn decrement(env: Env) {
+        let key = DataKey::Admin;
+        let value = env.storage().instance().get(&key).unwrap_or(0u128);
+
+        let new_value = if value > 0 { value - 1 } else { 0 };
+
+        env.storage().instance().set(&key, &new_value);
+    }
+
+    pub fn get_value(env: Env) -> u128 {
+        let key = DataKey::Admin;
+        let value = env.storage().instance().get(&key).unwrap_or(0u128);
+
+        value
+    }
+
+}
+
+```
+
+### Try on Okashi
+
+- [First App](https://okashi.dev/playground/acslatycqivceoygbkzbvqjlodaw)

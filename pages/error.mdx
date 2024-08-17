@@ -5,24 +5,65 @@ author: Emmanuel Ajike
 date: August 17, 2024
 ---
 
-# Documentation in Progress
+# Errors
 
-## Overview
+Contract errors in Soroban are defined using Rust's `u32` enums, where each variant is assigned a unique integer value. The `#[contracterror]` attribute is used to mark the enum so it can be returned as an error from contract functions. These enums have specific requirements:
 
-Thank you for your interest in our project! We are currently working on the documentation to ensure that it is comprehensive and easy to follow. This section will provide all the necessary steps and information for integrating our solution once it is complete.
+- The `#[repr(u32)]` attribute is mandatory, ensuring each variant is represented as a `u32`.
+- The `#[derive(Copy)]` attribute is required, allowing the error variants to be copied.
+- Each enum variant must explicitly define an integer value.
 
-## What's Coming
+> **Important Note:** Contract errors cannot be stored as part of the contract's data, which means they cannot be used as types for fields in contract types.
 
-- Detailed installation instructions.
-- Step-by-step integration guide.
-- Configuration and usage examples.
-- Known issues and troubleshooting tips.
-- Additional resources and support information.
+### Returning Errors in Contract Functions
 
-## Stay Tuned
+Contract functions can return errors using the `Result<_, E>` type, where `_` represents the success type, and `E` represents the error type. For instance, the function below returns a `Result<u32, Error>`, indicating that it can either return a `u32` value on success (`Ok(u32)`) or an `Error` on failure (`Err(Error)`).
 
-We are committed to delivering high-quality documentation that will make your integration process as smooth as possible. Please check back soon for updates!
+```rust copy
 
-In the meantime, if you have any questions or need assistance, feel free to reach out to our [support team](#).
+#![no_std]
+use soroban_sdk::{contract, contracterror, contractimpl, log, symbol_short, Env, Symbol};
 
-Thank you for your patience and understanding! 🚀
+#[contracterror]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
+#[repr(u32)]
+pub enum ContractError {
+    ExceedsLimit = 1,
+}
+
+const COUNTER: Symbol = symbol_short!("COUNTER");
+const MAXIMUM: u32 = 5;
+
+#[contract]
+pub struct CounterContract;
+
+#[contractimpl]
+impl CounterContract {
+    pub fn increase_counter(env: Env) -> Result<u32, ContractError> {
+        // Retrieve the current counter value from instance storage (defaulting to 0 if not set).
+        let mut counter_value: u32 = env.storage().instance().get(&COUNTER).unwrap_or(0);
+        log!(&env, "Current counter: {}", counter_value);
+
+        // Increment the counter.
+        counter_value += 1;
+
+        // Check if the incremented value exceeds the allowed maximum.
+        if counter_value <= MAXIMUM {
+            // Save the updated counter value in instance storage.
+            env.storage().instance().set(&COUNTER, &counter_value);
+
+            // Return the updated counter value.
+            Ok(counter_value)
+        } else {
+            // If the counter exceeds the limit, return an error.
+            Err(ContractError::ExceedsLimit)
+        }
+    }
+}
+
+
+```
+
+### Try on Okashi
+
+- [Errors]()

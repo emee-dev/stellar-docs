@@ -5,24 +5,81 @@ author: Emmanuel Ajike
 date: August 17, 2024
 ---
 
-# Documentation in Progress
+# Soroban Macros
 
-## Overview
+Soroban provides a set of macros that help streamline the development of smart contracts by simplifying common patterns and ensuring that your code follows the necessary conventions. Below are some key Soroban macros with code samples to illustrate their usage.
 
-Thank you for your interest in our project! We are currently working on the documentation to ensure that it is comprehensive and easy to follow. This section will provide all the necessary steps and information for integrating our solution once it is complete.
+## `#[contract]` Macro
 
-## What's Coming
+The `#[contract]` macro is used to define a struct as a Soroban contract. This macro makes the struct recognizable as a contract by the Soroban runtime, which is essential for deployment and interaction.
 
-- Detailed installation instructions.
-- Step-by-step integration guide.
-- Configuration and usage examples.
-- Known issues and troubleshooting tips.
-- Additional resources and support information.
+```rust copy
+#![no_std]
+use soroban_sdk::{contract, contractimpl, Env};
 
-## Stay Tuned
+#[contract]
+pub struct HelloContract;
+```
 
-We are committed to delivering high-quality documentation that will make your integration process as smooth as possible. Please check back soon for updates!
+In this example, `HelloContract` is defined as a contract using the `#[contract]` macro. This tells Soroban that `HelloContract` will be the main struct containing the contract logic.
 
-In the meantime, if you have any questions or need assistance, feel free to reach out to our [support team](#).
+## `#[contractimpl]` Macro
 
-Thank you for your patience and understanding! 🚀
+The `#[contractimpl]` macro is used to implement the contract's methods. This macro ensures that the methods defined within the `impl` block are properly registered as callable functions of the contract.
+
+```rust copy
+use soroban_sdk::{contractimpl, symbol_short, vec, Env, Symbol, Vec};
+
+#[contractimpl]
+impl HelloContract {
+    pub fn hello(env: Env, to: Symbol) -> Vec<Symbol> {
+        vec![&env, symbol_short!("Hello"), to]
+    }
+}
+```
+
+In this example, the `#[contractimpl]` macro is applied to the `impl HelloContract` block, allowing the `hello` function to be recognized as a public method of the `HelloContract`. This function can then be invoked externally.
+
+## `#[repr(u32)]` and `#[derive(Copy, Clone, Debug, PartialEq)]` Macros
+
+These macros are used when defining contract-specific error types. The `#[repr(u32)]` macro ensures that the enum variants are represented as `u32` values, which is a requirement for contract errors. The `#[derive]` macros add traits like `Copy` and `Clone` to the enum, which are necessary for proper error handling.
+
+```rust copy
+use soroban_sdk::{contracterror};
+
+#[derive(Copy, Clone, Debug, PartialEq)]
+#[repr(u32)]
+#[contracterror]
+pub enum Error {
+    InvalidInput = 1,
+    NotFound = 2,
+}
+```
+
+In this example, the `Error` enum is defined with variants `InvalidInput` and `NotFound`, each associated with a specific `u32` value. The `#[contracterror]` macro is used to indicate that this enum will be used as an error type in the contract.
+
+## `#[test]` Macro
+
+Although not specific to Soroban, the `#[test]` macro is commonly used in Rust for writing unit tests. When developing Soroban contracts, you can use this macro to write tests for your contract logic, ensuring correctness before deployment.
+
+```rust copy
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use soroban_sdk::Env;
+
+    #[test]
+    fn test_hello() {
+        let env = Env::default();
+        let to = Symbol::short("World");
+        let result = HelloContract::hello(env, to);
+        assert_eq!(result, vec![symbol_short!("Hello"), to]);
+    }
+}
+```
+
+In this example, the `#[test]` macro is used to define a unit test for the `hello` function in `HelloContract`. The test checks whether the function returns the expected value.
+
+### Try on Okashi
+
+- [Errors]()
