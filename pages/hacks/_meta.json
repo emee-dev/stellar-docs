@@ -1,0 +1,8 @@
+{
+  "re-entrancy": "Re-Entrancy",
+  "accessing-private-data": "Accessing Private Data",
+  "denial-of-service": "Denial of Service",
+  "honeypot": "Honeypot",
+  "signature-replay": "Signature Replay",
+  "vault-inflation-attack": "Vault Inflation Attack"
+}

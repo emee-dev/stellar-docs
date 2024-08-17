@@ -1,9 +1,36 @@
 {
-  "index": "Introduction",
-  "another": "Another Page",
-  "advanced": "Advanced (A Folder)",
+  "index": "intro",
+  "hello-world": "Hello world",
+  "first-app": "First App",
+  "primitive-data-types": "Primitive Data types",
+  "variables": "Variables",
+  "constants": "Constants",
+  "immutable": "Immutable",
+  "reading-and-writing-state-variable": "Reading and Writing to a state variable",
+  "xlm-and-token-units": "XLM and token Units",
+  "gas-and-gas-price": "Gas and Gas Price",
+  "if-else": "if / Else",
+  "array": "Array",
+  "enums": "Enum",
+  "structs": "Structs",
+  "data-locations": "Data Locations",
+  "function": "Function",
+  "view-and-write-functions": "View and Write functions",
+  "error": "Error",
+  "function-returns": "Function returns",
+  "events": "Events",
+  "constructor": "Constructor",
+  "calling-other-contracts": "Calling other contracts",
+  "visibility": "Visibility",
+  "macros": "Macros",
+  "sending-xlm-token-transfer": "Sending XLM - (token tranfer)",
+  "applications": "Applications",
+  "tests": "Tests",
+  "deployment": "Deployment",
+  "hacks": "Hacks",
+  "dapp": "Dapp",
   "about": {
-    "title": "About",
+    "title": "Blog",
     "type": "page"
   },
   "contact": {
@@ -11,5 +38,10 @@
     "type": "page",
     "href": "https://twitter.com/shuding_",
     "newWindow": true
+  },
+  "another": {
+    "href": "https://github.com/shuding/another",
+    "title": "Another Page",
+    "display": "hidden"
   }
 }
