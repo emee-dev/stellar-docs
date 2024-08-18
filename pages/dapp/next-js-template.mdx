@@ -5,24 +5,102 @@ author: Emmanuel Ajike
 date: August 17, 2024
 ---
 
-# Documentation in Progress
+# Next Js Template
 
 ## Overview
 
-Thank you for your interest in our project! We are currently working on the documentation to ensure that it is comprehensive and easy to follow. This section will provide all the necessary steps and information for integrating our solution once it is complete.
+I am a lover of good technology and Next js is a good fullstack framework for building better React applications. I made this template to be a monorepo setup and with the
+intention to reduce some of the code duplication.
 
-## What's Coming
+## Requirements
 
-- Detailed installation instructions.
-- Step-by-step integration guide.
-- Configuration and usage examples.
-- Known issues and troubleshooting tips.
-- Additional resources and support information.
+- **Stellar CLI**: Required for deploying and interacting with Stellar smart contracts.
+- **Node.js**: v16 or later.
+- **pnpm**: Preferred package manager for this project.
+- **Turborepo**: For managing the monorepo.
 
-## Stay Tuned
+## Environment Variables
 
-We are committed to delivering high-quality documentation that will make your integration process as smooth as possible. Please check back soon for updates!
+The following environment variables must be configured in a `.env` file at the root of your project:
 
-In the meantime, if you have any questions or need assistance, feel free to reach out to our [support team](#).
+```bash
+# Using Testnet network (worked last time I checked)
+PUBLIC_SOROBAN_NETWORK_PASSPHRASE="Test SDF Network ; September 2015"
+PUBLIC_SOROBAN_RPC_URL="https://soroban-testnet.stellar.org:443"
 
-Thank you for your patience and understanding! 🚀
+SOROBAN_ACCOUNT="alice"
+SOROBAN_NETWORK="testnet"
+```
+
+## Setup
+
+1. **Clone the Repository**:
+
+   ```bash
+   git clone https://github.com/your-repo/oss-donations-stellar.git
+   cd oss-donations-stellar
+   ```
+
+2. **Install Dependencies**:
+
+   Use pnpm to install the necessary packages:
+
+   ```bash
+   pnpm install
+   ```
+
+3. **Initialize the Project**:
+
+   The `init.js` script handles the setup of smart contracts. Before starting the Next.js dApp, run the initialization script:
+
+   ```bash
+   pnpm run init
+   ```
+
+4. **Deploy Smart Contracts**:
+
+   The contracts will be built and deployed to the testnet automatically by the `init.js` script. After deployment, TypeScript bindings will be generated for each contract.
+
+5. **Run the dApp**:
+
+   Start the Next.js development server:
+
+   ```bash
+   pnpm run dev
+   ```
+
+6. **Interact with Smart Contracts**:
+
+   You can interact with the deployed smart contracts using the import contracts. Example:
+
+   ```ts
+   "use client";
+
+   import oss_donate from "@/components/contracts/oss_donate";
+   import { useEffect } from "react";
+
+   async function contract_fn_call() {
+     let client = await oss_donate.testing_fn();
+
+     console.log(client.result);
+   }
+
+   useEffect(() => {
+     contract_fn_call();
+   }, []);
+   ```
+
+## Project Structure
+
+- **/apps/dapp**: The Next.js frontend for the dApp.
+- **/apps/dapp/components/contracts**: Contains the Imported Typescript Smart Contract Bindings.
+- **/soroban**: Directory containing the smart contracts written in Rust.
+- **/bindings**: Auto-generated TypeScript bindings workspaces for the smart contracts.
+
+## License
+
+This project is licensed under the MIT License.
+
+## Contact
+
+For any inquiries or support, feel free to reach out to me at [[emee-dev](https://x.com/___emee_)] on X (formerly Twitter).
