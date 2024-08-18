@@ -5,24 +5,284 @@ author: Emmanuel Ajike
 date: August 17, 2024
 ---
 
-# Documentation in Progress
+# Automated Soroban Smart Contract Build and Deployment Script
+
+This script, written in JavaScript using the `zx` toolkit, automates the build and deployment of Soroban smart contracts for a Next.js template. The goal is to simplify the setup process for developers, allowing them to start faster without manually handling each step. Below is a breakdown of what the script does.
 
 ## Overview
 
-Thank you for your interest in our project! We are currently working on the documentation to ensure that it is comprehensive and easy to follow. This section will provide all the necessary steps and information for integrating our solution once it is complete.
+The `init.js` file contains a script that performs several tasks crucial for deploying Soroban smart contracts to a testnet. It ensures that all required configurations are set up, builds the contracts, deploys them, generates TypeScript bindings, and integrates the contracts into the Next.js dApp.
 
-## What's Coming
+## Key Components
 
-- Detailed installation instructions.
-- Step-by-step integration guide.
-- Configuration and usage examples.
-- Known issues and troubleshooting tips.
-- Additional resources and support information.
+### 1. **Constants and Utilities**
 
-## Stay Tuned
+- **Constants**: The script defines key constants like `CLI`, `testnet_network`, `rpc_url`, `identity_name`, and `network_passphrase`, which are necessary for interacting with the Soroban network.
+- **Utilities**: Utility functions such as `loadJSON`, `convertToForwardSlashes`, and `filenameNoExtension` handle common tasks like reading JSON files and manipulating file paths.
 
-We are committed to delivering high-quality documentation that will make your integration process as smooth as possible. Please check back soon for updates!
+### 2. **Testnet Configuration**
 
-In the meantime, if you have any questions or need assistance, feel free to reach out to our [support team](#).
+The `configureTestnet` function initializes the testnet by adding the network configuration to the Soroban CLI. This includes setting the RPC URL and the network passphrase.
 
-Thank you for your patience and understanding! 🚀
+### 3. **Identity Configuration**
+
+The `configureIdentity` function configures the identity for the Soroban network by generating keys associated with the given identity name.
+
+### 4. **Building Soroban Contracts**
+
+The `buildSorobanContracts` function navigates to the Soroban contracts workspace and builds the contracts using the Soroban CLI.
+
+### 5. **Deploying Soroban Contracts**
+
+The `deploySorobanContracts` function deploys the built contracts to the Soroban testnet. It also stores the contract IDs and their corresponding WebAssembly (WASM) file names in JSON files under the `.soroban/contract-ids` directory.
+
+### 6. **Generating TypeScript Bindings**
+
+The `generateTypescriptBindings` function generates TypeScript bindings for the deployed contracts. These bindings allow the Next.js application to interact with the contracts in a type-safe manner.
+
+### 7. **Importing Contract Bindings**
+
+The `importContractBindings` function imports the generated TypeScript bindings into the Next.js dApp, adding the contracts as dependencies in the `package.json` file. It also creates TypeScript files that initialize the contract clients with the appropriate network configurations.
+
+### 8. **Finalizing Setup**
+
+The `finishingTouch` function ensures that the package manager (`pnpm`) recognizes the latest workspace changes, installing any necessary dependencies.
+
+### 9. **Main Execution**
+
+```js copy
+#!/usr/bin/env zx
+import { glob } from "glob";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { $, cd, spinner } from "zx";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
+
+// Constants
+const CLI = "stellar";
+const testnet_network = process.env.SOROBAN_NETWORK;
+const rpc_url = process.env.PUBLIC_SOROBAN_RPC_URL;
+const identity_name = process.env.SOROBAN_ACCOUNT;
+const network_passphrase = process.env.PUBLIC_SOROBAN_NETWORK_PASSPHRASE;
+const verbose = true;
+
+// File Handling
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Utils
+const loadJSON = async (path) => JSON.parse(await readFile(path));
+const convertToForwardSlashes = (filePath) => filePath.replace(/\\/g, "/");
+const filenameNoExtension = (filename) =>
+  path.basename(filename, path.extname(filename));
+
+// Helpers
+async function configureTestnet() {
+  await spinner(
+    "Initiating testnet...",
+    () =>
+      $({
+        verbose,
+      })`${CLI} network add ${testnet_network} --rpc-url ${rpc_url} --network-passphrase ${network_passphrase}`
+  );
+}
+
+async function configureIdentity() {
+  await spinner(
+    "Configuring identity...",
+    () =>
+      $({
+        verbose,
+      })`${CLI} keys generate ${identity_name} --network ${testnet_network}`
+  );
+}
+
+async function buildSorobanContracts() {
+  // cd into the soroban contracts cargo workspace
+  cd("soroban");
+
+  // Build contracts
+  await spinner("Building contract...", () => $`${CLI} contract build`);
+}
+
+async function deploySorobanContracts() {
+  let contractIdsAndWasmFileName = [];
+  let allDotWasmFiles = await glob(
+    "target/wasm32-unknown-unknown/release/*.wasm"
+  );
+
+  for (let dotWasmFile of allDotWasmFiles) {
+    // Extract the file name from the wasm file
+    let extractFileName = filenameNoExtension(path.normalize(dotWasmFile));
+    let normalizedPath = convertToForwardSlashes(path.normalize(dotWasmFile));
+
+    // Deploy contracts
+    let contractId = await spinner(
+      `Deploying ${identity_name.toUpperCase()}...`,
+      () =>
+        $({
+          verbose,
+        })`${CLI} contract deploy --wasm ${normalizedPath} --source ${identity_name} --network ${testnet_network}`
+    );
+
+    contractIdsAndWasmFileName.push({
+      contractId: contractId.stdout.trim(),
+      wasmFileName: extractFileName,
+    });
+  }
+
+  // Save the deployed contract infos to file -> .soroban/contract-ids/*.json
+  await writeContractIdsToFile(contractIdsAndWasmFileName);
+}
+
+async function generateTypescriptBindings() {
+  let contractIds = await glob(`${__dirname}/.soroban/contract-ids/*.json`);
+
+  for (let contract of contractIds) {
+    let wasmFileName = filenameNoExtension(contract);
+    let json = await loadJSON(contract);
+
+    if (!json) {
+      console.warn(`Could not read: ${contract}`);
+      break;
+    }
+
+    // Root directory
+    let bindingsPath = `${convertToForwardSlashes(
+      __dirname
+    )}/bindings/${wasmFileName}`;
+
+    // Generate Typescript bindings for the smart contracts
+    await $({
+      verbose,
+      nothrow: true, // The stellar CLI throws "error: program not found" error even though it generated the bindings.
+    })`${CLI} contract bindings typescript --network ${testnet_network} --contract-id ${json.id} --output-dir ${bindingsPath} --overwrite`;
+  }
+}
+
+async function writeContractIdsToFile(contractIdsAndWasmFileName) {
+  const contractsDir = `${__dirname}/.soroban/contract-ids`;
+
+  await mkdir(contractsDir, { recursive: true });
+
+  for (const file of contractIdsAndWasmFileName) {
+    let json = {
+      id: file.contractId,
+      alias: file.wasmFileName,
+    };
+
+    await writeFile(
+      `${__dirname}/.soroban/contract-ids/${file.wasmFileName}.json`,
+      JSON.stringify(json, null, 3),
+      { encoding: "utf8" }
+    );
+  }
+}
+
+async function importContractBindings() {
+  let contractFiles = await glob(
+    `${convertToForwardSlashes(__dirname)}/.soroban/contract-ids/*.json`
+  );
+
+  // The path to write the contract files
+  let contractOutputDir = `${convertToForwardSlashes(
+    __dirname
+  )}/apps/dapp/components/contracts`;
+
+  // The path to dapp package json file
+  let dappPath = `${convertToForwardSlashes(__dirname)}/apps/dapp/package.json`;
+  let dappPackageJson = await loadJSON(dappPath);
+
+  for (const path of contractFiles) {
+    let jsonContent = await loadJSON(path);
+
+    if (!jsonContent) {
+      console.warn(`Could not extract the json from ${path}`);
+      break;
+    }
+
+    // Add the contract to the dapp as a dependency
+    dappPackageJson.dependencies[jsonContent.alias] = "workspace:*";
+
+    // Import Contracts Ts files -> apps/dapp/components/contracts/*.ts
+    const importContent =
+      `import * as Client from '${jsonContent.alias}';\n` +
+      `import { rpcUrl } from './utils';\n\n` +
+      `export default new Client.Client({\n` +
+      `  ...Client.networks.${testnet_network},\n` +
+      `  rpcUrl,\n` +
+      `${
+        testnet_network === "local" || testnet_network === "standalone"
+          ? `  allowHttp: true,\n`
+          : ""
+      }` +
+      `});\n`;
+
+    const outputPath = `${contractOutputDir}/${jsonContent.alias}.ts`;
+
+    try {
+      await writeFile(outputPath, importContent);
+      console.log(`File written to ${outputPath}`);
+    } catch (error) {
+      console.error("Error writing file:", error);
+    }
+  }
+
+  // Convert dappPackageJson to a JSON string before saving
+  const dappPackageJsonString = JSON.stringify(dappPackageJson, null, 3);
+
+  // Save the modified dapp package json file
+  await spinner("Installing contracts...", async () => {
+    try {
+      await writeFile(dappPath, dappPackageJsonString);
+      console.log(`File written to ${dappPath}`);
+    } catch (error) {
+      console.error("Error installing contract:", error);
+    }
+  });
+}
+
+async function finishingTouch() {
+  // To make sure pnpm recognizes the latest workspace changes
+  await spinner(
+    "Finishing touch...",
+    async () => await $({ verbose })`pnpm install`
+  );
+}
+
+// Entry point
+async function main() {
+  await Promise.all([configureTestnet(), configureIdentity()]);
+  await buildSorobanContracts();
+  await deploySorobanContracts();
+  await generateTypescriptBindings();
+  await importContractBindings();
+  await finishingTouch();
+}
+
+if (!testnet_network || !rpc_url || !identity_name || !network_passphrase) {
+  console.warn("The required env variables was not added.");
+} else {
+  main().catch((error) => console.error(error));
+}
+```
+
+The `main` function serves as the entry point of the script, orchestrating the entire process by calling each of the previously mentioned functions in sequence.
+
+### 10. **Environment Variables Check**
+
+Before running the script, it checks for the presence of required environment variables (`testnet_network`, `rpc_url`, `identity_name`, `network_passphrase`). If any are missing, the script will not proceed.
+
+## Package Scripts
+
+The `package.json` file includes several npm scripts that integrate with the `init.js` script:
+
+- **init**: Initializes the Soroban smart contract setup by running the `init.js` script.
+- **build**: Builds the project using `turbo`.
+- **dev**: Runs the `init` script and starts the development server for the dApp.
+- **lint**: Lints the codebase.
+- **format**: Formats the codebase using Prettier.
+
+## Conclusion
+
+This automation script streamlines the process of building and deploying Soroban smart contracts in a Next.js environment. By running the `init` script, developers can quickly set up their project, freeing them from the manual configuration typically required to deploy smart contracts.

@@ -13,7 +13,7 @@ Soroban provides a set of macros that help streamline the development of smart c
 
 The `#[contract]` macro is used to define a struct as a Soroban contract. This macro makes the struct recognizable as a contract by the Soroban runtime, which is essential for deployment and interaction.
 
-```rust copy
+```rs copy showLineNumbers
 #![no_std]
 use soroban_sdk::{contract, contractimpl, Env};
 
@@ -27,7 +27,7 @@ In this example, `HelloContract` is defined as a contract using the `#[contract]
 
 The `#[contractimpl]` macro is used to implement the contract's methods. This macro ensures that the methods defined within the `impl` block are properly registered as callable functions of the contract.
 
-```rust copy
+```rs copy showLineNumbers
 use soroban_sdk::{contractimpl, symbol_short, vec, Env, Symbol, Vec};
 
 #[contractimpl]
@@ -44,7 +44,7 @@ In this example, the `#[contractimpl]` macro is applied to the `impl HelloContra
 
 These macros are used when defining contract-specific error types. The `#[repr(u32)]` macro ensures that the enum variants are represented as `u32` values, which is a requirement for contract errors. The `#[derive]` macros add traits like `Copy` and `Clone` to the enum, which are necessary for proper error handling.
 
-```rust copy
+```rs copy showLineNumbers
 use soroban_sdk::{contracterror};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -62,7 +62,7 @@ In this example, the `Error` enum is defined with variants `InvalidInput` and `N
 
 Although not specific to Soroban, the `#[test]` macro is commonly used in Rust for writing unit tests. When developing Soroban contracts, you can use this macro to write tests for your contract logic, ensuring correctness before deployment.
 
-```rust copy
+```rs copy showLineNumbers
 #[cfg(test)]
 mod tests {
     use super::*;

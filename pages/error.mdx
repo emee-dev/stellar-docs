@@ -19,7 +19,7 @@ Contract errors in Soroban are defined using Rust's `u32` enums, where each vari
 
 Contract functions can return errors using the `Result<_, E>` type, where `_` represents the success type, and `E` represents the error type. For instance, the function below returns a `Result<u32, Error>`, indicating that it can either return a `u32` value on success (`Ok(u32)`) or an `Error` on failure (`Err(Error)`).
 
-```rust copy
+```rs copy showLineNumbers
 
 #![no_std]
 use soroban_sdk::{contract, contracterror, contractimpl, log, symbol_short, Env, Symbol};

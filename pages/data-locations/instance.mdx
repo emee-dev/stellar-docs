@@ -16,7 +16,7 @@ Instance storage is particularly beneficial for storing global contract data tha
 is accessed or modified by multiple users, such as an administrator address in a token contract.
 This centralized storage ensures that critical contract-wide information is consistently accessible.
 
-```rust copy
+```rs copy
 
 #![no_std]
 use soroban_sdk::{contract, contractimpl, contracttype, Address, Env};

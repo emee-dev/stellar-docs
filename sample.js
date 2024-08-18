@@ -1,8 +1,4 @@
-/* 
-
-Stellar by Example
-
-
+/*
 --Basic
 hello world
 first app
@@ -51,17 +47,4 @@ Sending XLM - (token tranfer)
 	Stellar Js SDK
 	init.js script
 	Next js template
-
-
-
-
-
-
-
-
-
-
-
-
-
 */

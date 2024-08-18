@@ -5,24 +5,103 @@ author: Emmanuel Ajike
 date: August 17, 2024
 ---
 
-# Documentation in Progress
+# Tests
 
-## Overview
+It is very important to write tests to assert the functionality and be certain that the smart contract works as expected.
 
-Thank you for your interest in our project! We are currently working on the documentation to ensure that it is comprehensive and easy to follow. This section will provide all the necessary steps and information for integrating our solution once it is complete.
+```rs copy showLineNumbers filename="src/lib.rs"
 
-## What's Coming
+#![no_std]
 
-- Detailed installation instructions.
-- Step-by-step integration guide.
-- Configuration and usage examples.
-- Known issues and troubleshooting tips.
-- Additional resources and support information.
+use soroban_sdk::{contract, contracterror, contractimpl, contracttype, Address, Env, String};
+#[contracterror]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
+#[repr(u32)]
+pub enum Error {
+    LimitReached = 1,
+    RepoLinkedAlready = 2,
+    RepoNotLinked = 3,
+}
 
-## Stay Tuned
+#[derive(Clone)]
+#[contracttype]
+pub enum DataKey {
+    Repos(String),
+    RecipientClaimed,
+}
 
-We are committed to delivering high-quality documentation that will make your integration process as smooth as possible. Please check back soon for updates!
+#[contract]
+pub struct OssDonationsContract;
 
-In the meantime, if you have any questions or need assistance, feel free to reach out to our [support team](#).
+#[contractimpl]
+#[allow(dead_code)]
+impl OssDonationsContract {
+    // Link a GitHub repo with a maintainer's address
+    pub fn link_repo(
+        env: Env,
+        github_repo_url: String,
+        maintainer: Address,
+    ) -> Result<(String, Address, u32), Error> {
+        maintainer.require_auth();
 
-Thank you for your patience and understanding! 🚀
+        let balance = 0u32;
+        let storage = env.storage().instance();
+
+        let is_registered = storage.has(&DataKey::Repos(github_repo_url.clone()));
+
+        if is_registered {
+            return Err(Error::RepoLinkedAlready);
+        }
+
+        let repo_info_tuple = (maintainer.clone(), balance);
+        storage.set(&DataKey::Repos(github_repo_url.clone()), &repo_info_tuple);
+
+        Ok((github_repo_url, maintainer, balance))
+    }
+}
+
+```
+
+## Test case
+
+```rs copy showLineNumbers filename="src/test.rs"
+
+#![cfg(test)]
+use super::*;
+use soroban_sdk::{log, symbol_short, vec, Address, Env};
+
+#[test]
+#[allow(unused)]
+fn link_repos() {
+    let env = Env::default();
+    env.mock_all_auths();
+
+    let maintainer_address = Address::generate(&env);
+    let github_repo = "https://github.com/emee-dev/oss-donate";
+    let contract_id = env.register_contract(None, OssDonationsContract);
+
+    let result = env.as_contract(&contract_id.clone(), || {
+        return OssDonationsContract::link_repo(
+            env.clone(),
+            String::from_str(&env, github_repo),
+            maintainer_address.clone(),
+        );
+    });
+
+    match result {
+        Ok(data) => {
+            assert_eq!(
+                (data.0, data.1, data.2),
+                (String::from_str(&env, github_repo), maintainer_address, 0),
+                "Should return the github_repo, maintainer_address, and contract balance"
+            );
+        }
+        Err(e) => log!(&env, "Error linking Repo: ", e),
+    }
+}
+
+```
+
+### Try on Okashi
+
+- [Tests]()
